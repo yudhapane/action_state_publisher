@@ -2,25 +2,27 @@
 # license removed for brevity
 import rospy
 from std_msgs.msg import String
-from tamp_msgs.msg import action
-from tamp_msgs.msg import monitor
+from task_planner.msg import Action
+from task_planner.msg import Monitor
 
 
 def talker():
-    pub = rospy.Publisher('chatter', action, queue_size=10)
+    pub = rospy.Publisher('chatter', Action, queue_size=10)
     rospy.init_node('talker', anonymous=True)
     rate = rospy.Rate(10) # 10hz
-    msg = action()
-    mon = monitor()
+
+    msg = Action()
+    mon = Monitor()
     mon.predicate = "collision_free"
     mon.arguments = ["left_arm", "obstacle"]
-    msg.id = "move_above"
+    msg.id = "move_above_left_arm_slot11_slot21"
     msg.monitors = [mon]
-    msg.succeed = True
+    msg.succeed = False
+
     while not rospy.is_shutdown():
         #rospy.loginfo(msg)
         pub.publish(msg)
-        rate.sleep()
+        rospy.sleep(0.1)
 
 if __name__ == '__main__':
     try:
