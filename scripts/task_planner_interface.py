@@ -69,10 +69,6 @@ def action_execution_verification(action_msg):
             (actions, outcomes) = step
 
             for action in actions:
-                ## print out some info
-                print(color.fg_yellow(' + ') + str(action))
-                state = state.apply(action)
-
                 ## find an action matching the received action
                 if '_'.join(action.sig) == action_msg.id:
                     if action_msg.succeed:
@@ -94,11 +90,15 @@ def action_execution_verification(action_msg):
 
                         for monitor in action_msg.monitors:
                             if 'collision' in monitor.predicate:
-                                state_predicates.remove(('collision_free', monitor.arguments[0]))
-                                state_predicates.append(('collision_detected', monitor.arguments[0]))
+                                if ('collision_free', monitor.arguments[0]) in state_predicates:
+                                    state_predicates.remove(('collision_free', monitor.arguments[0]))
+                                if not ('collision_detected', monitor.arguments[0]) in state_predicates:
+                                    state_predicates.append(('collision_detected', monitor.arguments[0]))
                             elif 'admittance' in monitor.predicate:
-                                state_predicates.remove(('admittance_free', monitor.arguments[0]))
-                                state_predicates.append(('admittance_detected', monitor.arguments[0]))
+                                if ('admittance_free', monitor.arguments[0]) in state_predicates:
+                                    state_predicates.remove(('admittance_free', monitor.arguments[0]))
+                                if not ('admittance_detected', monitor.arguments[0]) in state_predicates:
+                                    state_predicates.append(('admittance_detected', monitor.arguments[0]))
 
                         ## convert back to frozenset
                         state.predicates = frozenset(state_predicates)
