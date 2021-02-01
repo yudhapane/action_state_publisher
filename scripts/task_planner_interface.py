@@ -2,6 +2,7 @@
 
 import rospy
 from std_msgs.msg import String
+from task_planner.msg import Plan
 from task_planner.msg import Action
 
 import argparse
@@ -31,12 +32,26 @@ def parse():
 #############################
 #############################
 
-# def callback(action_msg, (problem, plan, state, goals, verbose)):
-def callback(action_msg):
+def send_json_plan(plan_json_file, actions_json_file):
+    pub = rospy.Publisher('plan', Plan, queue_size=10)
+    rospy.init_node('tamp_interface', anonymous=True)
+    plan = Plan()
+    plan.plan_json_file = plan_json_file
+    plan.actions_json_file = actions_json_file
+    pub.publish(plan)
+    print(color.fg_yellow('\n - plan json files: ') + '{}\n\t\t    {}'.format(plan_json_file, actions_json_file))
+    return
+
+
+#############################
+#############################
+
+# def action_execution_verification(action_msg, (problem, plan, state, goals, verbose)):
+def action_execution_verification(action_msg):
 
     global problem, plan, state, goals
 
-    rospy.loginfo(rospy.get_caller_id() + 'I heard %s %s %s', action_msg.id, action_msg.succeed, action_msg.monitors)
+    # rospy.loginfo(rospy.get_caller_id() + ': %s %s %s', action_msg.id, action_msg.succeed, action_msg.monitors)
 
     #############################
     ## simulate and execute the plan
@@ -61,20 +76,33 @@ def callback(action_msg):
                 ## find an action matching the received action
                 if '_'.join(action.sig) == action_msg.id:
                     if action_msg.succeed:
+                        ## print out succeeded action
+                        print(color.fg_yellow(' + ') + str(action))
                         # apply action to the state and update the state
-                        print(action_msg.succeed)
+                        state = state.apply(action)
+                        return
                     else:
-                        # update the state with the action violence and make a re-plane
+                        ## print out failed action
+                        print(color.fg_red(' - ') + str(action))
+                        for monitor in action_msg.monitors:
+                            print(color.fg_red('   ---- ') + '{} {}'.format(monitor.predicate, monitor.arguments[0]))
 
-                        ## convert back the predicates frozenset to a list and update the state
-                        ## i.e., remove ('arm_canreach', 'robot', 'object')
+                        ## update the state with the action violence and make a re-plane
+                        ## convert the predicates frozenset to a list and update the state
+                        ## i.e., remove ('collision_free', 'left_arm')
                         state_predicates = list(state.predicates)
-                        # state_predicates.remove(('arm_canreach', action.sig[1:], action.sig[1:]))
-                        # state_predicates.append(('blocked', action.sig[1:]))
+
+                        for monitor in action_msg.monitors:
+                            if 'collision' in monitor.predicate:
+                                state_predicates.remove(('collision_free', monitor.arguments[0]))
+                                state_predicates.append(('collision_detected', monitor.arguments[0]))
+                            elif 'admittance' in monitor.predicate:
+                                state_predicates.remove(('admittance_free', monitor.arguments[0]))
+                                state_predicates.append(('admittance_detected', monitor.arguments[0]))
+
+                        ## convert back to frozenset
                         state.predicates = frozenset(state_predicates)
 
-                        print(action_msg.monitors)
-                        print(color.fg_yellow('action failed'))
                     break
 
             # inner for-loop finished with no break
@@ -109,6 +137,7 @@ def callback(action_msg):
     #############################
     ## call the execution engine giving the initial plan
     # plan_json_file actions_json_file
+    send_json_plan(plan_json_file, actions_json_file)
 
     return
 
@@ -148,14 +177,6 @@ if __name__ == '__main__':
     #############################
     ## set the default solenoid domain parameters
     ## call planner to make an initial policy given the domain, problem and planners
-    # (policy, plan, plan_json_file, actions_json_file) = \
-    #     make_plan(domain = "benchmarks/multirob/solenoid/domain.pddl", \
-    #               problem = problem_pddl, \
-    #               planners = ["optic-clp"], \
-    #               agents = ("left_arm", "right_arm"), \
-    #               temporal_actions = ("avoid_collision", "admittance_control"), \
-    #               rank=False, \
-    #               verbose=args.verbose)
     (policy, plan, plan_json_file, actions_json_file) = \
         make_plan(domain = domain, \
                   problem = problem_pddl, \
@@ -167,7 +188,7 @@ if __name__ == '__main__':
 
     #############################
     ## call the execution engine giving the initial plan
-    # plan_json_file actions_json_file
+    send_json_plan(plan_json_file, actions_json_file)
 
     #############################
     ## listen and follow the execution engine 
@@ -176,86 +197,9 @@ if __name__ == '__main__':
     rospy.init_node('tamp_interface', anonymous=True)
 
     global sub_proc
-    sub_proc = rospy.Subscriber("chatter", Action, callback)
-    # sub_proc = rospy.Subscriber("chatter", Action, callback, (problem, plan, state, goals, args.verbose))
+    sub_proc = rospy.Subscriber("action", Action, action_execution_verification)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
     print('shutdown')
-
-    # exit()
-
-    # #############################
-    # ## while goal is not achieved 
-    # while True:
-
-    #     #############################
-    #     ## wait for a message from the execution engine
-    #     action_msg = rospy.wait_for_message("chatter", Action)
-    #     # rospy.loginfo(rospy.get_caller_id() + 'I heard %s %s %s', action_msg.id, action_msg.succeed, action_msg.monitors)
-
-    #     #############################
-    #     ## simulate and execute the plan
-    #     for level, step in plan.items():
-
-    #         if step == 'GOAL':
-    #             # goal state is achieved
-    #             print(color.fg_voilet('@ GOAL'))
-    #             break
-
-    #         else:
-    #             # unfold step into a tuple of actoins and outcomes
-    #             (actions, outcomes) = step
-
-    #             for action in actions:
-    #                 ## print out some info
-    #                 print(color.fg_yellow(' + ') + str(action))
-    #                 state = state.apply(action)
-
-    #                 ## find an action matching the received action
-    #                 if '_'.join(action.sig) == action_msg.id:
-    #                     if action_msg.succeed:
-    #                         # apply action to the state and update the state
-    #                         print(action_msg.succeed)
-    #                     else:
-    #                         # update the state with the action violence and make a re-plane
-
-    #                         ## convert back the predicates frozenset to a list and update the state
-    #                         ## i.e., remove ('arm_canreach', 'robot', 'object')
-    #                         state_predicates = list(state.predicates)
-    #                         # state_predicates.remove(('arm_canreach', action.sig[1:], action.sig[1:]))
-    #                         # state_predicates.append(('blocked', action.sig[1:]))
-    #                         state.predicates = frozenset(state_predicates)
-
-    #                         print(action_msg.monitors)
-    #                         print(color.fg_yellow('action failed'))
-    #                         break
-
-    #             # inner for-loop finished with no break
-    #             else:
-    #                 continue
-    #             # inner for-loop was broken, then break outer for-loop too
-    #             break
-
-    #     ## check if goal is achieved 
-    #     if state.is_true(problem.goals):
-    #         break
-
-    #     # for-loop was broken due to execution failure, then make a new plan and continue
-    #     #############################
-    #     ## create a new pddl problem file at /tmp/safe-planner
-    #     problem_pddl = pddl.pddl(problem, state=state, goal=goals)
-
-    #     ## set the default solenoid domain parameters
-    #     ## call planner to make an initial policy given the domain, problem and planners
-    #     (policy, plan, plan_json_file, actions_json_file) = \
-    #         make_plan(domain = "benchmarks/multirob/solenoid/domain.pddl", \
-    #                   problem = problem_pddl, \
-    #                   planners = ["optic-clp"], \
-    #                   agents = ("left_arm", "right_arm"), \
-    #                   temporal_actions = ("avoid_collision", "admittance_control"), \
-    #                   rank=False, \
-    #                   verbose=args.verbose)
-
-    # print('shutdown')

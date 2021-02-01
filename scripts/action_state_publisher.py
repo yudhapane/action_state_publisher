@@ -7,8 +7,8 @@ from task_planner.msg import Monitor
 
 
 def talker():
-    pub = rospy.Publisher('chatter', Action, queue_size=10)
-    rospy.init_node('talker', anonymous=True)
+    pub = rospy.Publisher('action', Action, queue_size=10)
+    rospy.init_node('tamp_interface', anonymous=True)
     rate = rospy.Rate(10) # 10hz
 
     msg = Action()
