@@ -33,13 +33,20 @@ def parse():
 #############################
 
 def send_json_plan(plan_json_file, actions_json_file):
-    pub = rospy.Publisher('plan', Plan, queue_size=10)
+
+    plan_json_file = os.path.splitext(os.path.splitext(plan_json_file)[0])[0]
+    pub = rospy.Publisher('plan', String, queue_size=10)
     rospy.init_node('tamp_interface', anonymous=True)
-    plan = Plan()
-    plan.plan_json_file = plan_json_file
-    plan.actions_json_file = actions_json_file
-    pub.publish(plan)
-    print(color.fg_yellow('\n - plan json files: ') + '{}\n\t\t    {}'.format(plan_json_file, actions_json_file))
+    pub.publish(plan_json_file)
+    print(color.fg_yellow('\n - path to the json files: ') + '{}'.format(plan_json_file))
+
+    # pub = rospy.Publisher('plan', Plan, queue_size=10)
+    # rospy.init_node('tamp_interface', anonymous=True)
+    # plan = Plan()
+    # plan.plan_json_file = plan_json_file
+    # plan.actions_json_file = actions_json_file
+    # pub.publish(plan)
+    # print(color.fg_yellow('\n - plan json files: ') + '{}\n\t\t    {}'.format(plan_json_file, actions_json_file))
     return
 
 
