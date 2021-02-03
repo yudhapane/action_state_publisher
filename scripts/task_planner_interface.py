@@ -216,7 +216,7 @@ if __name__ == '__main__':
     rospy.init_node('tamp_interface', anonymous=True)
 
     global sub_proc
-    sub_proc = rospy.Subscriber("action", Action, action_execution_verification)
+    sub_proc = rospy.Subscriber("action_status", Action, action_execution_verification)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
