@@ -16,6 +16,7 @@ import dot_plan
 import dot_ma_plan 
 from json_ma_plan_iros21 import make_plan
 
+
 def parse():
     usage = 'python3 main.py <PROBLEM> [-v N]'
     description = "this is an interface to run the planner on the solenoid domain."
@@ -35,10 +36,14 @@ def parse():
 def send_json_plan(plan_json_file, actions_json_file):
 
     plan_json_file = os.path.splitext(os.path.splitext(plan_json_file)[0])[0]
-    pub = rospy.Publisher('plan', String, queue_size=10)
+    pub = rospy.Publisher('plan', String, queue_size=10, latch=True)
     rospy.init_node('tamp_interface', anonymous=True)
     pub.publish(plan_json_file)
     print(color.fg_yellow('\n - path to the json files: ') + '{}'.format(plan_json_file))
+
+    # a list keeping the ids of successfully executed actions
+    global action_ids
+    action_ids = []
 
     # pub = rospy.Publisher('plan', Plan, queue_size=10)
     # rospy.init_node('tamp_interface', anonymous=True)
@@ -76,8 +81,15 @@ def action_execution_verification(action_msg):
             (actions, outcomes) = step
 
             for action in actions:
+                # if action was already visited
+                if '_'.join(action.sig) in action_ids: continue
+
                 ## find an action matching the received action
                 if '_'.join(action.sig) == action_msg.id:
+                    # add action's id to the visited action_ids
+                    action_ids.append('_'.join(action.sig))
+
+                    # check if action succeeded
                     if action_msg.succeed:
                         ## print out succeeded action
                         print(color.fg_yellow(' + ') + str(action))
@@ -160,7 +172,7 @@ if __name__ == '__main__':
 
     args = parse()
 
-    global domain, problem, planners, agents, temporal_actions, verbose, plan, state, goals
+    global domain, problem, planners, agents, temporal_actions, verbose, plan, state, goals, action_ids
 
     ## parse domain and create a domain object
     problem = pddlparser.PDDLParser.parse("benchmarks/multirob/solenoid/" + args.problem + ".pddl")
