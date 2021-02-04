@@ -5,18 +5,21 @@ from std_msgs.msg import String
 from task_planner.msg import Action
 from task_planner.msg import Monitor
 
-pub = rospy.Publisher('action_status', Action, queue_size=10)
+pub = rospy.Publisher('action', Action, queue_size=10)
 msg = Action()
 collision_monitor = Monitor()
 admittance_monitor = Monitor()
+empty_monitor = Monitor()
 last_action_right_arm = "none"
 last_action_left_arm = "none"
+right_arm_action = "none"
+left_arm_action = "none"
 
 def callback_action(data):
     #rospy.loginfo("%s " % data.data)
-    # parse data
-    str = data.data[2:-10]
+    str = data.data[2:-10]  # remove the "e_" and "@skill_rtt"
     msg.id = str
+    msg.monitors  = [empty_monitor]
     msg.succeed   = True
     pub.publish(msg)
     if ("right_arm" in str):
@@ -26,40 +29,48 @@ def callback_action(data):
     
     
 def callback_collision_right(data):
-    msg.id = last_action_right_arm
+    right_arm_action = rospy.get_param("/right_arm_action")
+    msg.id = right_arm_action
     collision_monitor.predicate = "collision_detected"
-    collision_monitor.arguments = ["right_arm", "obstacle"]
-    msg.monitors  = [collision_monitor]
-    msg.succeed   = False
-    pub.publish(msg)    
-
-def callback_collision_left(data):
-    msg.id = last_action_left_arm
-    admittance_monitor.predicate = "collision_detected"
-    admittance_monitor.arguments = ["left_arm", "obstacle"]
-    msg.monitors  = [admittance_monitor]
-    msg.succeed   = False
-    pub.publish(msg)    
-
-def callback_admittance_right(data):
-    msg.id = last_action_right_arm
-    collision_monitor.predicate = "admittance_detected"
     collision_monitor.arguments = ["right_arm"]
     msg.monitors  = [collision_monitor]
     msg.succeed   = False
-    pub.publish(msg)    
+    if ("move_above" in right_arm_action):
+        pub.publish(msg)    
 
+def callback_collision_left(data):
+    left_arm_action = rospy.get_param("/left_arm_action")
+    msg.id = left_arm_action
+    collision_monitor.predicate = "collision_detected"
+    collision_monitor.arguments = ["left_arm"]
+    msg.monitors  = [collision_monitor]
+    msg.succeed   = False
+    if ("move_above" in left_arm_action):
+        pub.publish(msg)    
+
+def callback_admittance_right(data):
+    right_arm_action = rospy.get_param("/right_arm_action")
+    msg.id = right_arm_action
+    admittance_monitor.predicate = "admittance_detected"
+    admittance_monitor.arguments = ["right_arm"]
+    msg.monitors  = [admittance_monitor]
+    msg.succeed   = False
+    if ("move_above" in right_arm_action):
+        pub.publish(msg) 
+        
 def callback_admittance_left(data):
-    msg.id = last_action_right_arm
+    left_arm_action = rospy.get_param("/left_arm_action")
+    msg.id = left_arm_action
     admittance_monitor.predicate = "admittance_detected"
     admittance_monitor.arguments = ["left_arm"]
     msg.monitors  = [admittance_monitor]
     msg.succeed   = False
-    pub.publish(msg)    
-
+    if ("move_above" in left_arm_action):
+        pub.publish(msg) 
+        
+        
 def talker():
         
-    pub = rospy.Publisher('action', Action, queue_size=10)
     rospy.Subscriber("eventPort", String, callback_action)    
     rospy.Subscriber("e_collision_right", String, callback_collision_right)    
     rospy.Subscriber("e_collision_left", String, callback_collision_left)    
@@ -70,7 +81,7 @@ def talker():
 
     while not rospy.is_shutdown():
         #rospy.loginfo(msg)
-        pub.publish(msg)
+        #pub.publish(msg)
         rospy.sleep(0.1)
 
 if __name__ == '__main__':
