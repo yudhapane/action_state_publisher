@@ -5,7 +5,7 @@ from std_msgs.msg import String
 from task_planner.msg import Action
 from task_planner.msg import Monitor
 
-pub = rospy.Publisher('action', Action, queue_size=10)
+pub = rospy.Publisher('action_status', Action, queue_size=10)
 msg = Action()
 collision_monitor = Monitor()
 admittance_monitor = Monitor()
@@ -21,10 +21,11 @@ def callback_action(data):
     msg.id = str
     msg.monitors  = [empty_monitor]
     msg.succeed   = True
-    pub.publish(msg)
     if ("right_arm" in str):
+        pub.publish(msg)
         last_action_right_arm = str 
     if ("left_arm" in str):
+        pub.publish(msg)
         last_action_left_arm = str 
     
     
