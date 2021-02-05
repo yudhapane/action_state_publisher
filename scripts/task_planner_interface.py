@@ -26,7 +26,7 @@ def parse():
         choices=("prob1_1", "prob2_1", "prob3_1", "prob4_1", "prob1_0", "prob2_0", "prob3_0", "prob4_0"))
     parser.add_argument("-a", "--agents", nargs='+', type=str, default=["left_arm", "right_arm"], 
         help="a list of agents: e.g., -a left_arm right_arm")
-    parser.add_argument("-c", "--planners", nargs='+', type=str, default=["ff"], 
+    parser.add_argument("-c", "--planners", nargs='+', type=str, default=["optic-clp"], 
         choices=os.listdir('planners'), metavar='PLNNER', 
         help="a list of classical planners: ff, fd, m, prob, optic-clp, lpg-td, lpg, vhpop (e.g. -c ff fd m) (default=[optic-clp])")
     parser.add_argument("-t", "--temporal_actions", nargs='+', type=str, default=["avoid_collision", "admittance_control"], 
