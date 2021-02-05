@@ -81,11 +81,17 @@ def action_execution_verification(action_msg):
             (actions, outcomes) = step
 
             for action in actions:
-                # if action was already visited
-                if '_'.join(action.sig) in action_ids: continue
-
                 ## find an action matching the received action
                 if '_'.join(action.sig) == action_msg.id:
+                    # if action was already visited
+                    if '_'.join(action.sig) in action_ids: 
+                        ## check if goal is achieved 
+                        if state.is_true(goals):
+                            sub_proc.unregister()
+                            rospy.signal_shutdown('finished')
+                            print(color.fg_yellow('@ GOAL'))
+                        return
+                    
                     # add action's id to the visited action_ids
                     action_ids.append('_'.join(action.sig))
 
