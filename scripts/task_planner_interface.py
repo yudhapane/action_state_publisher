@@ -69,7 +69,7 @@ def send_json_plan(plan_json_file, actions_json_file):
 
 def action_execution_verification(action_msg):
 
-    global domain, problem, state, plan, action_ids
+    global args, domain, problem, state, plan, action_ids
 
     #############################
     ## simulate and execute the plan
