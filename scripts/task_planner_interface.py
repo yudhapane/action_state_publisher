@@ -69,15 +69,15 @@ def action_execution_verification(action_msg):
     ## simulate and execute the plan
     for level, step in plan.items():
 
-        # if step == 'GOAL':
-        #     # goal state is achieved
-        #     print(color.fg_voilet('@ GOAL'))
-        #     sub_proc.unregister()
-        #     rospy.signal_shutdown('finished')
-        #     return
-
         ## check if goal is achieved 
         if state.is_true(goals):
+            # goal state is achieved
+            print(color.fg_voilet('@ GOAL'))
+            sub_proc.unregister()
+            rospy.signal_shutdown('finished')
+            return
+
+        elif step == 'GOAL':
             # goal state is achieved
             print(color.fg_voilet('@ GOAL'))
             sub_proc.unregister()
@@ -104,6 +104,12 @@ def action_execution_verification(action_msg):
                         print(color.fg_yellow(' + ') + str(action))
                         # apply action to the state and update the state
                         state = state.apply(action)
+                        ## check if goal is achieved 
+                        if state.is_true(goals):
+                            # goal state is achieved
+                            print(color.fg_voilet('@ GOAL'))
+                            sub_proc.unregister()
+                            rospy.signal_shutdown('finished')
                         return
                     else:
                         ## print out failed action
