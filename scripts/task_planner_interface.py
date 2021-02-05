@@ -115,7 +115,7 @@ def action_execution_verification(action_msg):
                         ## print out failed action
                         print(color.fg_red(' - ') + str(action))
                         for monitor in action_msg.monitors:
-                            print(color.fg_red('   ---- ') + '{} {}'.format(monitor.predicate, monitor.arguments[0]))
+                            print(color.fg_red('   ---- {} {}'.format(monitor.predicate, monitor.arguments[0])))
 
                         ## update the state with the action violence and make a re-plane
                         ## convert the predicates frozenset to a list and update the state
