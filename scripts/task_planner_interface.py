@@ -69,7 +69,15 @@ def action_execution_verification(action_msg):
     ## simulate and execute the plan
     for level, step in plan.items():
 
-        if step == 'GOAL':
+        # if step == 'GOAL':
+        #     # goal state is achieved
+        #     print(color.fg_voilet('@ GOAL'))
+        #     sub_proc.unregister()
+        #     rospy.signal_shutdown('finished')
+        #     return
+
+        ## check if goal is achieved 
+        if state.is_true(goals):
             # goal state is achieved
             print(color.fg_voilet('@ GOAL'))
             sub_proc.unregister()
@@ -83,15 +91,10 @@ def action_execution_verification(action_msg):
             for action in actions:
                 ## find an action matching the received action
                 if '_'.join(action.sig) == action_msg.id:
+
                     # if action was already visited
-                    if '_'.join(action.sig) in action_ids: 
-                        ## check if goal is achieved 
-                        if state.is_true(goals):
-                            sub_proc.unregister()
-                            rospy.signal_shutdown('finished')
-                            print(color.fg_yellow('@ GOAL'))
-                        return
-                    
+                    if '_'.join(action.sig) in action_ids: return
+
                     # add action's id to the visited action_ids
                     action_ids.append('_'.join(action.sig))
 
