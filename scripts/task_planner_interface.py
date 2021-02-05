@@ -75,13 +75,14 @@ def action_execution_verification(action_msg):
     ## simulate and execute the plan
     for level, step in plan.items():
 
-        ## check if goal is achieved 
-        if state.is_true(problem.goals) or step == 'GOAL':
-            # goal state is achieved
-            print(color.fg_voilet('@ GOAL'))
-            sub_proc.unregister()
-            rospy.signal_shutdown('finished')
-            return
+        ## if all actions in the plan are visited 
+        if step == 'GOAL':
+            ## check if goal is achieved then terminate planner
+            if state.is_true(problem.goals):
+                # goal state is achieved
+                print(color.fg_voilet('@ GOAL'))
+                sub_proc.unregister()
+                rospy.signal_shutdown('finished')
 
         else:
             # unfold step into a tuple of actions and outcomes
@@ -103,6 +104,13 @@ def action_execution_verification(action_msg):
                         print(color.fg_yellow(' + ') + str(action))
                         # apply action to the state and update the state
                         state = state.apply(action)
+
+                        ## check if goal is achieved then terminate planner
+                        if state.is_true(problem.goals):
+                            # goal state is achieved
+                            print(color.fg_voilet('@ GOAL'))
+                            sub_proc.unregister()
+                            rospy.signal_shutdown('finished')
                     else:
                         ## print out failed action
                         print(color.fg_red(' - ') + str(action))
@@ -149,7 +157,7 @@ def action_execution_verification(action_msg):
                         send_json_plan(plan_json_file, actions_json_file)
 
                     return
-
+    return
 
 #############################
 #############################
