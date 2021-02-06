@@ -157,80 +157,34 @@ def concurrent_executions(policy, plan, agents=[]):
     return a list of sub-plans that can be run in parallel as well as 
     joint_executions between sub-plans
     '''
-    single_executions =list()
+    # single_executions =list()
+    single_executions = [ dict() for _ in range(len(agents)) ]
     joint_executions = OrderedDict()
 
-    initial_state = policy.problem.initial_state
+    for level, step in plan.items():
 
-    queue = [(0, initial_state, [])] # [(root, state, add_lists)]
-    visited = []
+        if step == 'GOAL': continue
 
-    while len(queue) > 0:
+        # unfold step into a tuple of actions and outcomes
+        (actions, outcomes) = step
 
-        (root, state, add_lists) = queue.pop(0) # FIFO
-        visited.append(root)
+        for action in actions:
+            # if all agents participate in the action
+            if len(set(action.sig[1:]).intersection(set(agents))) > 1:
+                joint_executions.setdefault(level, (set(), set()))[0].add(action)
+                joint_executions.setdefault(level, (set(), set()))[1].update(set([out[1] for out in outcomes]))
 
-        if root in plan and (plan[root] == 'GOAL' or plan[root] == None): continue
-        if root == 'GOAL': continue
+            # if no agents participate in the action
+            elif len(set(action.sig[1:]).intersection(set(agents))) == 0:
+                single_executions.append({ level : ({action}, set([l for ((_, _), l) in outcomes])) })
 
-        # unfold plan step at current root position
-        (step, outcomes) = plan[root]
-
-        new_add_lists = [add_list for add_list in add_lists]
-
-        if root == 0: # happens only in the first iteration to initialize
-            for i, agent in enumerate(agents):
-                for action in step:
+            # if one agent participates in the action
+            else:
+                for i, agent in enumerate(agents):
                     if agent in action.sig[1:]:
                         # create a ConcurrentAction object for each action
-                        if i < len(single_executions):
-                            single_executions[i].setdefault(root, (set(),set()))[0].add(action)
-                            single_executions[i].setdefault(root, (set(),set()))[1].update(set([out[1] for out in outcomes]))
-                            new_add_lists[i].update(add_effects(action, state, initial_state))
-                        else:
-                            single_executions.append({ root : (set([action]), set([level for ((add_eff, del_eff), level) in outcomes])) })
-                            new_add_lists.append(add_effects(action, state, initial_state))
-        else:
-            for i, agent in enumerate(agents):
-                for action in step:
-                    if agent in action.sig[1:]:
-                        # create a ConcurrentAction object for each action
-                        single_executions[i].setdefault(root, (set(),set()))[0].add(action)
-                        single_executions[i].setdefault(root, (set(),set()))[1].update(set([out[1] for out in outcomes]))
-                        new_add_lists[i].update(add_effects(action, state, initial_state))
-
-            # for action in step:
-            #     print(action)
-            #     # print(add_lists)
-            #     print(new_add_lists)
-            #     # create a ConcurrentAction object for each action
-            #     # test all possible intersections
-            #     results = [i for i, add_list in enumerate(add_lists) if len(add_list.intersection(set(action.preconditions.pos_preconditions))) > 0]
-            #     print(results)
-            #     if len(results) == 1: # only one is True (append action to a single_execution)
-            #         single_executions[results[0]].setdefault(root, (set(),set()))[0].add(action)
-            #         single_executions[results[0]].setdefault(root, (set(),set()))[1].update(set([out[1] for out in outcomes]))
-            #         new_add_lists[results[0]].update(add_effects(action, state, initial_state))
-            #     elif len(results) == 0: # all are False (no intersection; add a new single_execution)
-            #         single_executions.append({root:(set([action]), set([out[1] for out in outcomes]))})
-            #         new_add_lists.append(add_effects(action, state, initial_state))
-            #     else: # some joint_executions (add action to joint_executions)
-            #         joint_executions.setdefault(root, (set(), set()))[0].add(action)
-            #         joint_executions.setdefault(root, (set(), set()))[1].update(set([out[1] for out in outcomes]))
-            #         for i in results: new_add_lists[i].update(add_effects(action, state, initial_state))
-
-        # apply 'step' in the current state and get possible states 
-        states = policy.apply_step(state, [action.sig for action in step])
-
-        # extend for the outcomes of 'step'
-        for outcome in outcomes:
-            if outcome == 'GOAL': continue
-            if outcome[1] in visited: continue
-
-            for state in states.keys():
-                if set(outcome[0][0]).issubset(state.predicates):
-                    queue.append((outcome[1], state, new_add_lists))
-                    break
+                        single_executions[i].setdefault(level, (set(),set()))[0].add(action)
+                        single_executions[i].setdefault(level, (set(),set()))[1].update(set([out[1] for out in outcomes]))
 
     return single_executions, joint_executions
 
