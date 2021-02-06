@@ -14,6 +14,7 @@ last_action_right_arm = "none"
 last_action_left_arm = "none"
 right_arm_action = "none"
 left_arm_action = "none"
+published_actions = {}
 
 def callback_action(data):
     #rospy.loginfo("%s " % data.data)
@@ -37,7 +38,9 @@ def callback_collision_right(data):
     msg.monitors  = [collision_monitor]
     msg.succeed   = False
     if ("move_above" in right_arm_action):
-        pub.publish(msg)    
+        if msg.id not in published_actions:
+            pub.publish(msg)
+            published_actions[msg.id] = msg.monitors
 
 def callback_collision_left(data):
     left_arm_action = rospy.get_param("/left_arm_action")
@@ -47,7 +50,9 @@ def callback_collision_left(data):
     msg.monitors  = [collision_monitor]
     msg.succeed   = False
     if ("move_above" in left_arm_action):
-        pub.publish(msg)    
+        if msg.id not in published_actions:
+            pub.publish(msg)
+            published_actions[msg.id] = msg.monitors
 
 def callback_admittance_right(data):
     right_arm_action = rospy.get_param("/right_arm_action")
@@ -57,7 +62,9 @@ def callback_admittance_right(data):
     msg.monitors  = [admittance_monitor]
     msg.succeed   = False
     if ("move_above" in right_arm_action):
-        pub.publish(msg) 
+        if msg.id not in published_actions:
+            pub.publish(msg)
+            published_actions[msg.id] = msg.monitors
         
 def callback_admittance_left(data):
     left_arm_action = rospy.get_param("/left_arm_action")
@@ -67,7 +74,9 @@ def callback_admittance_left(data):
     msg.monitors  = [admittance_monitor]
     msg.succeed   = False
     if ("move_above" in left_arm_action):
-        pub.publish(msg) 
+        if msg.id not in published_actions:
+            pub.publish(msg)
+            published_actions[msg.id] = msg.monitors
         
         
 def talker():
