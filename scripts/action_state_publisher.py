@@ -14,7 +14,8 @@ last_action_right_arm = "none"
 last_action_left_arm = "none"
 right_arm_action = "none"
 left_arm_action = "none"
-published_actions = {}
+published_actions_collision = {}
+published_actions_admittance = {}
 
 def callback_action(data):
     #rospy.loginfo("%s " % data.data)
@@ -38,9 +39,9 @@ def callback_collision_right(data):
     msg.monitors  = [collision_monitor]
     msg.succeed   = False
     if ("move_above" in right_arm_action):
-        if msg.id not in published_actions:
+        if msg.id not in published_actions_collision:
             pub.publish(msg)
-            published_actions[msg.id] = msg.monitors
+            published_actions_collision[msg.id] = msg.monitors
 
 def callback_collision_left(data):
     left_arm_action = rospy.get_param("/left_arm_action")
@@ -50,9 +51,9 @@ def callback_collision_left(data):
     msg.monitors  = [collision_monitor]
     msg.succeed   = False
     if ("move_above" in left_arm_action):
-        if msg.id not in published_actions:
+        if msg.id not in published_actions_collision:
             pub.publish(msg)
-            published_actions[msg.id] = msg.monitors
+            published_actions_collision[msg.id] = msg.monitors
 
 def callback_admittance_right(data):
     right_arm_action = rospy.get_param("/right_arm_action")
@@ -62,9 +63,9 @@ def callback_admittance_right(data):
     msg.monitors  = [admittance_monitor]
     msg.succeed   = False
     if ("move_above" in right_arm_action):
-        if msg.id not in published_actions:
+        if msg.id not in published_actions_admittance:
             pub.publish(msg)
-            published_actions[msg.id] = msg.monitors
+            published_actions_admittance[msg.id] = msg.monitors
         
 def callback_admittance_left(data):
     left_arm_action = rospy.get_param("/left_arm_action")
@@ -74,9 +75,9 @@ def callback_admittance_left(data):
     msg.monitors  = [admittance_monitor]
     msg.succeed   = False
     if ("move_above" in left_arm_action):
-        if msg.id not in published_actions:
+        if msg.id not in published_actions_admittance:
             pub.publish(msg)
-            published_actions[msg.id] = msg.monitors
+            published_actions_admittance[msg.id] = msg.monitors
         
         
 def talker():
